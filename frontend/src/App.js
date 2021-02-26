@@ -4,7 +4,7 @@ import './App.css';
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import Home from "./components/Home";
-import React, {useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import ProductDetails from "./components/product/ProductDetails";
 import Login from "./components/user/Login";
 import Register from "./components/user/Register";
@@ -18,12 +18,28 @@ import ForgotPassword from "./components/user/ForgotPassword";
 import NewPasssword from "./components/user/NewPassword";
 import Cart from "./components/cart/Cart";
 import Shipping from "./components/cart/Shipping";
+import ConfirmOrder from "./components/cart/ConfirmOrder";
+import axios from "axios";
+import {Elements} from "@stripe/react-stripe-js";
+import {loadStripe} from "@stripe/stripe-js/pure";
+import Payment from "./components/cart/Payment";
+import OrderSuccee from "./components/cart/OrderSuccess";
+import ListOrders from "./components/order/ListOrders";
 
 
 function App() {
 
+    const [stripeApiKey, setStripeApiKey] = useState('')
+
     useEffect(() => {
         store.dispatch(loadUser())
+
+        async function getStripeApiKey() {
+            const {data} = await axios.get('/api/v1/stripeapi');
+            setStripeApiKey(data.stripeApiKey)
+        }
+
+        getStripeApiKey();
     }, [])
 
     return (
@@ -36,7 +52,13 @@ function App() {
                     <Route path="/product/:id" component={ProductDetails} exact/>
 
                     <Route path="/cart" component={Cart} exact/>
-                    <ProtectedRoute path="/shipping" component={Shipping} exact/>
+                    <ProtectedRoute path="/shipping" component={Shipping}/>
+                    <ProtectedRoute path="/order/confirm" component={ConfirmOrder}/>
+                    <ProtectedRoute path="/success" component={OrderSuccee}/>
+
+                    {stripeApiKey && <Elements stripe={loadStripe(stripeApiKey)}>
+                        <ProtectedRoute path="/payment" component={Payment}/>
+                    </Elements>}
 
                     <Route path="/login" component={Login}/>
                     <Route path="/register" component={Register}/>
@@ -46,6 +68,8 @@ function App() {
 
                     <Route path="/password/forgot" component={ForgotPassword} exact/>
                     <Route path="/password/reset/:token" component={NewPasssword} exact/>
+
+                    <Route path="/orders/me" component={ListOrders} exact/>
                 </div>
                 <Footer/>
             </div>
